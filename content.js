@@ -68,44 +68,55 @@ function handleTextSelection() {
     return;
   }
 
-  // Create tooltip if doesn't exist
-  if (!tooltip) {
-    tooltip = createTooltip();
-  }
+  // Check if WordGlow is enabled before proceeding
+  chrome.storage.sync.get(["wordglowEnabled"], (result) => {
+    const isEnabled =
+      result.wordglowEnabled !== undefined ? result.wordglowEnabled : true;
 
-  // Position and show loading
-  tooltip.classList.remove("hidden"); // Ensure tooltip is visible immediately
-  positionTooltip(tooltip, selection);
-  showLoading(tooltip);
-
-  // Request translation
-  isTranslating = true;
-  chrome.runtime.sendMessage(
-    {
-      action: "translate",
-      text: selectedText,
-    },
-    (response) => {
-      isTranslating = false;
-      if (chrome.runtime.lastError) {
-        tooltip.innerHTML = `
-          <div class="wordglow-error">
-            Translation failed. Try again.
-          </div>
-        `;
-        return;
-      }
-      if (response && response.translation) {
-        showTranslation(tooltip, selectedText, response.translation);
-      } else {
-        tooltip.innerHTML = `
-          <div class="wordglow-error">
-            Translation failed. Try again.
-          </div>
-        `;
-      }
+    if (!isEnabled) {
+      hideTooltip();
+      return;
     }
-  );
+
+    // Create tooltip if doesn't exist
+    if (!tooltip) {
+      tooltip = createTooltip();
+    }
+
+    // Position and show loading
+    tooltip.classList.remove("hidden"); // Ensure tooltip is visible immediately
+    positionTooltip(tooltip, selection);
+    showLoading(tooltip);
+
+    // Request translation
+    isTranslating = true;
+    chrome.runtime.sendMessage(
+      {
+        action: "translate",
+        text: selectedText,
+      },
+      (response) => {
+        isTranslating = false;
+        if (chrome.runtime.lastError) {
+          tooltip.innerHTML = `
+            <div class="wordglow-error">
+              Translation failed. Try again.
+            </div>
+          `;
+          return;
+        }
+        if (response && response.translation) {
+          showTranslation(tooltip, selectedText, response.translation);
+        } else {
+          tooltip.innerHTML = `
+            <div class="wordglow-error">
+              Translation failed. Try again.
+            </div>
+          `;
+        }
+      }
+    );
+  });
 }
 
 // Event listeners
